@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import UIKit
 
 class RecorderFileDelegate: NSObject, AudioRecordingFileDelegate, AVAudioRecorderDelegate {
   var config: RecordConfig?
@@ -14,6 +15,38 @@ class RecorderFileDelegate: NSObject, AudioRecordingFileDelegate, AVAudioRecorde
     self.manageAudioSession = manageAudioSession
     self.onPause = onPause
     self.onStop = onStop
+    super.init()
+    setupNotifications()
+  }
+  
+  deinit {
+    NotificationCenter.default.removeObserver(self)
+  }
+  
+  private func setupNotifications() {
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleAppWillTerminate),
+      name: UIApplication.willTerminateNotification,
+      object: nil
+    )
+  }
+  
+  @objc private func handleAppWillTerminate() {
+    if audioRecorder?.isRecording == true {
+      audioRecorder?.stop()
+      audioRecorder = nil
+      
+      if let path = path {
+        if manageAudioSession {
+          try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }        
+        onStop()
+      }
+      
+      path = nil
+      config = nil
+    }
   }
 
   func start(config: RecordConfig, path: String) throws {
