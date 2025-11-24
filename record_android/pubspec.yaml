@@ -8,12 +8,14 @@ environment:
   flutter: ">=3.24.0"
 
 resolution: workspace
+publish_to: none
 
 dependencies:
   flutter:
     sdk: flutter
 
-  record_platform_interface: ^1.4.0
+  record_platform_interface:
+    path: ../record_platform_interface
 
 flutter:
   plugin:

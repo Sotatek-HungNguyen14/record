@@ -8,6 +8,7 @@ environment:
   flutter: ">=3.24.0"
 
 resolution: workspace
+publish_to: none
 
 dependencies:
   flutter:
@@ -17,7 +18,8 @@ dependencies:
     sdk: flutter
 
   web: ^1.0.0
-  record_platform_interface: ^1.4.0
+  record_platform_interface:
+    path: ../record_platform_interface
 
 dev_dependencies:
   flutter_lints: ^6.0.0
