@@ -143,6 +143,49 @@ namespace record_windows
 		return hr;
 	}
 
+	HRESULT Recorder::StartStreamWithFile(std::unique_ptr<RecordConfig> config, std::wstring path)
+	{
+		// Hybrid mode: stream audio data AND save to file simultaneously
+		// Check encoder support for file saving
+		bool supported = false;
+		HRESULT hr = isEncoderSupported(config->encoderName, &supported);
+
+		if (FAILED(hr) || !supported)
+		{
+			return E_NOTIMPL;
+		}
+
+		// Initialize recording (sets up audio capture)
+		hr = InitRecording(std::move(config));
+
+		if (SUCCEEDED(hr))
+		{
+			// Create sink writer to save to file
+			m_recordingPath = path;
+			hr = CreateSinkWriter(path);
+		}
+		
+		if (SUCCEEDED(hr))
+		{
+			// Request the first sample (will trigger both streaming and file writing)
+			hr = m_pReader->ReadSample((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM,
+				0,
+				NULL, NULL, NULL, NULL
+			);
+		}
+		
+		if (SUCCEEDED(hr))
+		{
+			UpdateState(RecordState::record);
+		}
+		else
+		{
+			EndRecording();
+		}
+
+		return hr;
+	}
+
 	HRESULT Recorder::Pause()
 	{
 		HRESULT hr = S_OK;

@@ -74,6 +74,15 @@ class MethodCallHandlerImpl(
         }
       }
 
+      "startStreamWithFile" -> {
+        try {
+          val config = RecordConfig.fromMap(call, appContext)
+          recorder.startRecordingHybrid(config, result)
+        } catch (e: IOException) {
+          result.error("record", "Cannot create recording configuration.", e.message)
+        }
+      }
+
       "stop" -> recorder.stop(result)
       "pause" -> recorder.pause(result)
       "resume" -> recorder.resume(result)

@@ -96,6 +96,24 @@ public class RecordIosPlugin: NSObject, FlutterPlugin {
       } catch {
         result(FlutterError(code: "record", message: error.localizedDescription, details: nil))
       }
+    case "startStreamWithFile":
+      guard let path = args["path"] as? String else  {
+        result(FlutterError(code: "record", message: "Call missing mandatory parameter path.", details: nil))
+        return
+      }
+      
+      guard let config = getConfig(args, result: result) else {
+        return
+      }
+
+      do {
+        try recorder.startStreamWithFile(config: config, path: path)
+        result(nil)
+      } catch RecorderError.error(let message, let details) {
+        result(FlutterError(code: "record", message: message, details: details))
+      } catch {
+        result(FlutterError(code: "record", message: error.localizedDescription, details: nil))
+      }
     case "stop":
       recorder.stop { path in
         result(path)
@@ -286,7 +304,7 @@ public class RecordIosPlugin: NSObject, FlutterPlugin {
         case "mixWithOthers": result.insert(.mixWithOthers)
         case "duckOthers": result.insert(.duckOthers)
         case "interruptSpokenAudioAndMixWithOthers": result.insert(.interruptSpokenAudioAndMixWithOthers)
-        case "allowBluetooth": result.insert(.allowBluetooth)
+        case "allowBluetooth": result.insert(.allowBluetoothA2DP)
         case "allowBluetoothA2DP": result.insert(.allowBluetoothA2DP)
         case "allowAirPlay": result.insert(.allowAirPlay)
         case "defaultToSpeaker": result.insert(.defaultToSpeaker)

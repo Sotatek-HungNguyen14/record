@@ -63,6 +63,28 @@ class Recorder {
     updateState(RecordState.record)
   }
 
+  func startStreamWithFile(config: RecordConfig, path: String) throws {
+    stop(completionHandler: {(path) -> () in })
+    
+    if !isEncoderSupported(config.encoder) {
+      throw RecorderError.error(
+        message: "Failed to start recording",
+        details: "\(config.encoder) not supported."
+      )
+    }
+    
+    let delegate = RecorderHybridDelegate(
+      onPause: {() -> () in self.updateState(RecordState.pause)},
+      onStop: {() -> () in self.updateState(RecordState.stop)}
+    )
+    
+    try delegate.start(config: config, path: path, recordEventHandler: m_recordEventHandler)
+    
+    self.delegate = delegate
+    
+    updateState(RecordState.record)
+  }
+
   func stop(completionHandler: @escaping (_ path: String?) -> ()) {
     if isRecording() {
       delegate?.stop(completionHandler: {(path) -> () in

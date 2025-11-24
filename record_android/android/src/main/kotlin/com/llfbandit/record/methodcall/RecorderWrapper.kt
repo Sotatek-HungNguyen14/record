@@ -55,6 +55,17 @@ class RecorderWrapper(
     startRecording(config, result)
   }
 
+  fun startRecordingHybrid(config: RecordConfig, result: MethodChannel.Result) {
+    // Hybrid mode: stream audio data AND save to file simultaneously
+    // This requires AudioRecorder (not MediaRecorder/legacy)
+    if (config.useLegacy) {
+      throw Exception("Cannot use hybrid mode with the legacy recorder")
+    }
+    // Create a new config with hybrid mode enabled
+    val hybridConfig = config.withHybridMode()
+    startRecording(hybridConfig, result)
+  }
+
   fun dispose() {
     try {
       recorder?.dispose()

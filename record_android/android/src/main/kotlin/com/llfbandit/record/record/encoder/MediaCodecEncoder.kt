@@ -106,7 +106,7 @@ class MediaCodecEncoder(
     }
 
     try {
-      mContainer = format.getContainer(config.path)
+      mContainer = format.getContainer(config)
     } catch (e: Exception) {
       onError(e)
     }

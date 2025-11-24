@@ -10,7 +10,7 @@ import java.nio.ByteBuffer
  * Create a passthrough encoder for the specified format.
  */
 class PassthroughEncoder(
-  config: RecordConfig,
+  private val config: RecordConfig,
   format: Format,
   private val mediaFormat: MediaFormat,
   private val listener: EncoderListener,
@@ -18,7 +18,7 @@ class PassthroughEncoder(
   private var mIsStarted = false
   private val mBufferInfo = MediaCodec.BufferInfo()
   private var mTrackIndex = -1
-  private var mContainer = format.getContainer(config.path)
+  private var mContainer = format.getContainer(config)
 
   private val mFrameSize = mediaFormat.getInteger(Format.KEY_X_FRAME_SIZE_IN_BYTES)
   private val mSampleRate = mediaFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)

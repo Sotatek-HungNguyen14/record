@@ -45,6 +45,19 @@ abstract class RecordMethodChannelPlatformInterface {
   /// full recorded data.
   Future<Stream<Uint8List>> startStream(String recorderId, RecordConfig config);
 
+  /// Hybrid mode - streams audio data AND saves to file simultaneously.
+  ///
+  /// [path]: The output path file where recording will be saved.
+  ///
+  /// Returns a stream of audio chunks for real-time processing (e.g., transcription)
+  /// while also saving the complete recording to the specified path.
+  /// When stopping the record, the file path can be retrieved via [stop] method.
+  Future<Stream<Uint8List>> startStreamWithFile(
+    String recorderId,
+    RecordConfig config, {
+    required String path,
+  });
+
   /// Stops recording session and release internal recorder resource.
   ///
   /// Returns the output path.

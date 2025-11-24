@@ -76,6 +76,57 @@ class AudioRecorder {
     return _recordStreamCtrl!.stream;
   }
 
+  /// Hybrid mode - streams audio data AND saves to file simultaneously.
+  ///
+  /// [path]: The output path file where recording will be saved.
+  ///
+  /// Returns a stream of audio chunks for real-time processing (e.g., transcription)
+  /// while also saving the complete recording to the specified path.
+  /// When stopping the record, the file path can be retrieved via [stop] method.
+  ///
+  /// Example:
+  /// ```dart
+  /// final stream = await recorder.startStreamWithFile(
+  ///   RecordConfig(),
+  ///   path: '/path/to/output.m4a',
+  /// );
+  ///
+  /// // Process stream for real-time transcription
+  /// stream.listen((audioData) {
+  ///   transcriptionService.process(audioData);
+  /// });
+  ///
+  /// // Later when stopping, get the saved file
+  /// final filePath = await recorder.stop();
+  /// ```
+  Future<Stream<Uint8List>> startStreamWithFile(
+    RecordConfig config, {
+    required String path,
+  }) async {
+    final stream = await _safeCall(
+      () async {
+        await _stopRecordStream();
+
+        return _platform.startStreamWithFile(_recorderId, config, path: path);
+      },
+    );
+
+    _recordStreamCtrl = StreamController.broadcast();
+
+    _recordStreamSubscription = stream.listen(
+      (data) {
+        final streamCtrl = _recordStreamCtrl;
+        if (streamCtrl == null || streamCtrl.isClosed) return;
+
+        streamCtrl.add(data);
+      },
+    );
+
+    _startAmplitudeTimer();
+
+    return _recordStreamCtrl!.stream;
+  }
+
   /// Stops recording session and release internal recorder resource.
   ///
   /// Returns the output path if any.

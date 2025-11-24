@@ -26,7 +26,13 @@ class OpusFormat : Format() {
     return format
   }
 
-  override fun getContainer(path: String?): IContainerWriter {
+  override fun getContainer(config: RecordConfig): IContainerWriter {
+    val path = config.path
+    
+    if (config.hybridMode) {
+      throw IllegalArgumentException("Hybrid mode is not supported for Opus format.")
+    }
+    
     if (path == null) {
       throw IllegalArgumentException("Path not provided. Stream is not supported.")
     }

@@ -90,6 +90,24 @@ public class RecordMacOsPlugin: NSObject, FlutterPlugin {
       } catch {
         result(FlutterError(code: "record", message: error.localizedDescription, details: nil))
       }
+    case "startStreamWithFile":
+      guard let path = args["path"] as? String else  {
+        result(FlutterError(code: "record", message: "Call missing mandatory parameter path.", details: nil))
+        return
+      }
+      
+      guard let config = getConfig(args, result: result) else {
+        return
+      }
+
+      do {
+        try recorder.startStreamWithFile(config: config, path: path)
+        result(nil)
+      } catch RecorderError.error(let message, let details) {
+        result(FlutterError(code: "record", message: message, details: details))
+      } catch {
+        result(FlutterError(code: "record", message: error.localizedDescription, details: nil))
+      }
     case "stop":
       recorder.stop { path in
         result(path)

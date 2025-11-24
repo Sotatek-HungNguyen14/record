@@ -37,7 +37,7 @@ class RecorderFileDelegate: NSObject, AudioRecordingFileDelegate, AVAudioRecorde
       audioRecorder?.stop()
       audioRecorder = nil
       
-      if let path = path {
+      if path != nil {
         if manageAudioSession {
           try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         }        

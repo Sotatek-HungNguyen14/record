@@ -207,16 +207,28 @@ namespace record_windows {
 			if (SUCCEEDED(hr)) { result->Success(EncodableValue()); }
 			else { ErrorFromHR(hr, *result); }
 		}
-		else if (method_call.method_name().compare("startStream") == 0)
-		{
-			auto config = InitRecordConfig(mapArgs);
+	else if (method_call.method_name().compare("startStream") == 0)
+	{
+		auto config = InitRecordConfig(mapArgs);
 
-			HRESULT hr = recorder->StartStream(std::move(config));
+		HRESULT hr = recorder->StartStream(std::move(config));
 
-			if (SUCCEEDED(hr)) { result->Success(EncodableValue()); }
-			else { ErrorFromHR(hr, *result); }
-		}
-		else if (method_call.method_name().compare("stop") == 0)
+		if (SUCCEEDED(hr)) { result->Success(EncodableValue()); }
+		else { ErrorFromHR(hr, *result); }
+	}
+	else if (method_call.method_name().compare("startStreamWithFile") == 0)
+	{
+		auto config = InitRecordConfig(mapArgs);
+
+		std::string path;
+		GetValueFromEncodableMap(mapArgs, "path", path);
+
+		HRESULT hr = recorder->StartStreamWithFile(std::move(config), Utf16FromUtf8(path));
+
+		if (SUCCEEDED(hr)) { result->Success(EncodableValue()); }
+		else { ErrorFromHR(hr, *result); }
+	}
+	else if (method_call.method_name().compare("stop") == 0)
 		{
 			auto recordingPath = recorder->GetRecordingPath();
 			HRESULT hr = recorder->Stop();

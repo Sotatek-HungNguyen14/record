@@ -24,6 +24,29 @@ mixin AudioRecorderMixin {
     );
   }
 
+  /// 🆕 Hybrid mode for web (fallback to stream-only due to browser limitations)
+  Future<void> recordHybrid(
+    AudioRecorder recorder,
+    RecordConfig config,
+    void Function(List<int> data)? onData,
+  ) async {
+    final bytes = <int>[];
+    final stream = await recorder.startStream(config);
+
+    stream.listen(
+      (data) {
+        bytes.addAll(data);
+        // Call the callback for real-time processing
+        onData?.call(data);
+      },
+      onDone: () => downloadWebData(
+        web.URL.createObjectURL(
+          web.Blob(<JSUint8Array>[Uint8List.fromList(bytes).toJS].toJS),
+        ),
+      ),
+    );
+  }
+
   void downloadWebData(String path) {
     // Simple download code for web testing
     final anchor = web.document.createElement('a') as web.HTMLAnchorElement

@@ -77,9 +77,9 @@ sealed class Format {
   /**
    * Create a container to write the encoded data.
    *
-   * @param path The output path if the container writes to file.
+   * @param config The recording configuration
    */
-  abstract fun getContainer(path: String?): IContainerWriter
+  abstract fun getContainer(config: RecordConfig): IContainerWriter
 
   protected fun nearestValue(values: IntArray, value: Int): Int {
     var distance: Int = abs(values[0] - value)

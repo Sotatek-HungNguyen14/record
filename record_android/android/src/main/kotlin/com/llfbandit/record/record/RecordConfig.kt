@@ -27,7 +27,8 @@ class RecordConfig(
   val speakerphone: Boolean = false,
   val audioManagerMode: Int = AudioManager.MODE_NORMAL,
   audioInterruption: Int,
-  val streamBufferSize: Int?
+  val streamBufferSize: Int?,
+  val hybridMode: Boolean = false
 ) {
   val numChannels: Int = 2.coerceAtMost(1.coerceAtLeast(numChannels))
   val audioInterruption: AudioInterruption = when (audioInterruption) {
@@ -48,6 +49,33 @@ class RecordConfig(
     "opus" -> AudioEncoder.Opus
     "wav" -> AudioEncoder.Wav
     else -> AudioEncoder.AacLc
+  }
+
+  /**
+   * Create a copy of this config with hybrid mode enabled
+   */
+  fun withHybridMode(): RecordConfig {
+    return RecordConfig(
+      path = path,
+      encoder = encoder.value,
+      bitRate = bitRate,
+      sampleRate = sampleRate,
+      numChannels = numChannels,
+      device = device,
+      autoGain = autoGain,
+      echoCancel = echoCancel,
+      noiseSuppress = noiseSuppress,
+      useLegacy = useLegacy,
+      service = service,
+      muteAudio = muteAudio,
+      manageBluetooth = manageBluetooth,
+      audioSource = audioSource,
+      speakerphone = speakerphone,
+      audioManagerMode = audioManagerMode,
+      audioInterruption = audioInterruption.ordinal,
+      streamBufferSize = streamBufferSize,
+      hybridMode = true
+    )
   }
 
   companion object {
@@ -133,7 +161,8 @@ class RecordConfig(
           call.argument("audioInterruption"),
           AudioInterruption.PAUSE.ordinal
         ),
-        call.argument("streamBufferSize")
+        call.argument("streamBufferSize"),
+        Utils.firstNonNull(map?.get("hybridMode") as Boolean?, false)
       )
     }
   }

@@ -30,6 +30,32 @@ mixin AudioRecorderMixin {
     );
   }
 
+  /// 🆕 Hybrid mode: Stream audio data AND save to file simultaneously
+  Future<void> recordHybrid(
+    AudioRecorder recorder,
+    RecordConfig config,
+    void Function(List<int> data)? onData,
+  ) async {
+    final path = await _getPath();
+
+    print('🎯 Starting hybrid recording to: $path');
+
+    final stream = await recorder.startStreamWithFile(config, path: path);
+
+    stream.listen(
+      (data) {
+        // Process stream data (e.g., for real-time transcription)
+        onData?.call(data);
+      },
+      onDone: () {
+        print('✅ Hybrid recording complete. File saved to $path.');
+      },
+      onError: (error) {
+        print('❌ Error in hybrid recording: $error');
+      },
+    );
+  }
+
   void downloadWebData(String path) {}
 
   Future<String> _getPath() async {

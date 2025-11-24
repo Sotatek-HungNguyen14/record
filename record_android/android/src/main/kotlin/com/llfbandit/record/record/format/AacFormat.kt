@@ -6,6 +6,7 @@ import android.media.MediaMuxer
 import com.llfbandit.record.record.AudioEncoder
 import com.llfbandit.record.record.RecordConfig
 import com.llfbandit.record.record.container.AdtsContainer
+import com.llfbandit.record.record.container.HybridContainer
 import com.llfbandit.record.record.container.IContainerWriter
 import com.llfbandit.record.record.container.MuxerContainer
 
@@ -61,7 +62,27 @@ class AacFormat : Format() {
     this.numChannels = numChannels
   }
 
-  override fun getContainer(path: String?): IContainerWriter {
+  override fun getContainer(config: RecordConfig): IContainerWriter {
+    val path = config.path
+    
+    // Hybrid mode: both file and stream
+    if (config.hybridMode && path != null) {
+      if (aacProfile != MediaCodecInfo.CodecProfileLevel.AACObjectLC) {
+        throw IllegalArgumentException("Hybrid mode is only supported for AAC-LC profile.")
+      }
+      
+      // File: AAC-LC encoded to M4A
+      val fileContainer = MuxerContainer(path, true, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+      
+      // Stream: Raw AAC frames in ADTS format for compatibility
+      // Note: This is AAC encoded data, unlike iOS which streams PCM
+      // If you need PCM stream, consider using PCM encoder in hybrid mode
+      val streamContainer = AdtsContainer(sampleRate, numChannels, aacProfile)
+      
+      return HybridContainer(fileContainer, streamContainer)
+    }
+    
+    // Stream only
     if (path == null) {
       if (aacProfile != MediaCodecInfo.CodecProfileLevel.AACObjectLC) {
         throw IllegalArgumentException("Stream is not supported.")
@@ -70,6 +91,7 @@ class AacFormat : Format() {
       return AdtsContainer(sampleRate, numChannels, aacProfile)
     }
 
+    // File only
     return MuxerContainer(path, true, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
   }
 }

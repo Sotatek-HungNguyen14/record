@@ -34,6 +34,7 @@ namespace record_windows
 
 		HRESULT Start(std::unique_ptr<RecordConfig> config, std::wstring path);
 		HRESULT StartStream(std::unique_ptr<RecordConfig> config);
+		HRESULT StartStreamWithFile(std::unique_ptr<RecordConfig> config, std::wstring path);
 		HRESULT Pause();
 		HRESULT Resume();
 		HRESULT Stop();

@@ -92,6 +92,27 @@ mixin RecordMethodChannel implements RecordMethodChannelPlatformInterface {
   }
 
   @override
+  Future<Stream<Uint8List>> startStreamWithFile(
+    String recorderId,
+    RecordConfig config, {
+    required String path,
+  }) async {
+    final eventRecordChannel = EventChannel(
+      'com.llfbandit.record/eventsRecord/$recorderId',
+    );
+
+    await _methodChannel.invokeMethod('startStreamWithFile', {
+      'recorderId': recorderId,
+      'path': path,
+      ...config.toMap(),
+    });
+
+    return eventRecordChannel
+        .receiveBroadcastStream()
+        .map<Uint8List>((data) => data);
+  }
+
+  @override
   Future<String?> stop(String recorderId) async {
     final outputPath = await _methodChannel.invokeMethod(
       'stop',

@@ -134,6 +134,46 @@ class RecordLinux extends RecordPlatform {
   }
 
   @override
+  Future<Stream<Uint8List>> startStreamWithFile(
+    String recorderId,
+    RecordConfig config, {
+    required String path,
+  }) async {
+    await stop(recorderId);
+
+    await _supportedOrThrow(recorderId, config);
+
+    _deleteFile(path);
+
+    // Hybrid mode: capture audio and both save to file AND stream it
+    final args = _getParecordArgs(config, path: null, canEncode: false);
+    _parecordProcess = await Process.start(_parecordBin, args);
+
+    // Start ffmpeg for encoding to file
+    _startFfmpegWithAmplitudeMonitoring(config, _parecordProcess!, path);
+
+    _path = path;
+    _updateState(RecordState.record);
+
+    // Create broadcast stream controller to share data with multiple listeners
+    final streamCtrl = StreamController<Uint8List>.broadcast();
+
+    // Listen to the PCM controller and forward to both file and stream
+    _inputPcmController!.stream.listen(
+      (data) {
+        final uint8Data = (data is Uint8List) ? data : Uint8List.fromList(data);
+        if (!streamCtrl.isClosed) {
+          streamCtrl.add(uint8Data);
+        }
+      },
+      onDone: () => streamCtrl.close(),
+      onError: (error) => streamCtrl.addError(error),
+    );
+
+    return streamCtrl.stream;
+  }
+
+  @override
   Future<String?> stop(String recorderId) async {
     final path = _path;
 

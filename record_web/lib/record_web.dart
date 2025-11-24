@@ -71,6 +71,18 @@ class RecordPluginWebWrapper extends RecordPlatform {
   }
 
   @override
+  Future<Stream<Uint8List>> startStreamWithFile(
+    String recorderId,
+    RecordConfig config, {
+    required String path,
+  }) {
+    // Web platform doesn't support file system access in the same way
+    // Fall back to stream-only mode
+    // The file will be generated as a blob and can be downloaded via stop()
+    return _getRecorder(recorderId).startStream(config);
+  }
+
+  @override
   Future<String?> stop(String recorderId) {
     return _getRecorder(recorderId).stop();
   }
