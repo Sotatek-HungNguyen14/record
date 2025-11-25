@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.media.AudioDeviceInfo
 import android.os.IBinder
+import android.util.Log
 import com.llfbandit.record.record.RecordConfig
 import com.llfbandit.record.record.bluetooth.BluetoothReceiver
 import com.llfbandit.record.record.bluetooth.BluetoothScoListener
@@ -26,6 +27,7 @@ class RecorderWrapper(
   messenger: BinaryMessenger,
 ) : BluetoothScoListener {
   companion object {
+    private const val TAG = "RecorderWrapper"
     const val EVENTS_STATE_CHANNEL = "com.llfbandit.record/events/"
     const val EVENTS_RECORD_CHANNEL = "com.llfbandit.record/eventsRecord/"
   }
@@ -36,6 +38,7 @@ class RecorderWrapper(
   private val recorderRecordStreamHandler = RecorderRecordStreamHandler()
   private var recorder: IRecorder? = null
   private var bluetoothReceiver: BluetoothReceiver? = null
+  private var isRegistered = false
 
   init {
     eventChannel = EventChannel(messenger, EVENTS_STATE_CHANNEL + recorderId)
@@ -73,6 +76,7 @@ class RecorderWrapper(
     } finally {
       maybeStopBluetooth()
       stopService()
+      unregisterFromService()
       recorder = null
     }
 
@@ -126,12 +130,65 @@ class RecorderWrapper(
       if (recorder == null) {
         result.success(null)
       } else {
-        recorder?.stop(fun(path) = result.success(path))
+        recorder?.stop(fun(path) {
+          result.success(path)
+          unregisterFromService()
+        })
       }
     } catch (e: Exception) {
       result.error("record", e.message, e.cause)
+      unregisterFromService()
     } finally {
       stopService()
+    }
+  }
+  
+  /**
+   * Called by AudioRecordingService when app is being terminated (onTaskRemoved)
+   * This needs to stop recording gracefully and save the file
+   */
+  fun stopOnTaskRemoved(onSuccess: () -> Unit, onError: (String) -> Unit) {
+    Log.d(TAG, "stopOnTaskRemoved called")
+    try {
+      if (recorder == null) {
+        Log.d(TAG, "No active recorder")
+        onSuccess()
+        return
+      }
+      
+      if (!recorder!!.isRecording) {
+        Log.d(TAG, "Recorder not recording")
+        onSuccess()
+        return
+      }
+      
+      Log.d(TAG, "Stopping recorder gracefully...")
+      recorder?.stop { path ->
+        Log.d(TAG, "Recording stopped successfully, file saved: $path")
+        unregisterFromService()
+        stopService()
+        onSuccess()
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "Error in stopOnTaskRemoved: ${e.message}", e)
+      unregisterFromService()
+      onError(e.message ?: "Unknown error")
+    }
+  }
+  
+  /**
+   * Force stop without callback - used as last resort in Service.onDestroy()
+   */
+  fun forceStop() {
+    Log.w(TAG, "forceStop called - forcing immediate cleanup")
+    try {
+      recorder?.dispose()
+      unregisterFromService()
+      maybeStopBluetooth()
+    } catch (e: Exception) {
+      Log.e(TAG, "Error in forceStop: ${e.message}", e)
+    } finally {
+      recorder = null
     }
   }
 
@@ -181,7 +238,24 @@ class RecorderWrapper(
 
   private fun start(config: RecordConfig, result: MethodChannel.Result) {
     recorder!!.start(config)
+    registerWithService()
     result.success(null)
+  }
+  
+  private fun registerWithService() {
+    if (!isRegistered) {
+      AudioRecordingService.registerRecorder(this)
+      isRegistered = true
+      Log.d(TAG, "Registered with AudioRecordingService")
+    }
+  }
+  
+  private fun unregisterFromService() {
+    if (isRegistered) {
+      AudioRecordingService.unregisterRecorder(this)
+      isRegistered = false
+      Log.d(TAG, "Unregistered from AudioRecordingService")
+    }
   }
 
   ///////////////////////////////////////////////////////////
@@ -211,15 +285,19 @@ class RecorderWrapper(
       Intent(context, AudioRecordingService::class.java).also { intent ->
         mServiceBound = context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
       }
+    } else {
+      // Even without notification config, start service to handle app termination
+      AudioRecordingService.startService(context)
     }
   }
 
   private fun stopService() {
     if (mServiceBound) {
       context.unbindService(serviceConnection)
-      context.stopService(Intent(context, AudioRecordingService::class.java))
       mServiceBound = false
     }
+    // Use companion method to stop service
+    AudioRecordingService.stopService(context)
   }
 
   ///////////////////////////////////////////////////////////
