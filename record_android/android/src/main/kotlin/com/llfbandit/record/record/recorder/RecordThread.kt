@@ -42,7 +42,11 @@ class RecordThread(
   }
 
   override fun onEncoderStream(bytes: ByteArray) {
-    recorderListener.onAudioChunk(bytes)
+    // In hybrid mode, we stream raw PCM directly (not encoded data)
+    // So we skip this callback for hybrid mode
+    if (!config.hybridMode) {
+      recorderListener.onAudioChunk(bytes)
+    }
   }
 
   fun isRecording(): Boolean {
@@ -109,6 +113,11 @@ class RecordThread(
           } else {
             val buffer = mPcmReader!!.read()
             if (buffer.isNotEmpty()) {
+              // In hybrid mode: stream raw PCM data for transcription
+              // while encoder writes to file
+              if (config.hybridMode) {
+                recorderListener.onAudioChunk(buffer)
+              }
               mEncoder!!.encode(buffer)
             }
           }

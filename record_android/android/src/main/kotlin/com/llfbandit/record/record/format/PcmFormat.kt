@@ -2,7 +2,6 @@ package com.llfbandit.record.record.format
 
 import android.media.MediaFormat
 import com.llfbandit.record.record.RecordConfig
-import com.llfbandit.record.record.container.HybridContainer
 import com.llfbandit.record.record.container.IContainerWriter
 import com.llfbandit.record.record.container.RawContainer
 
@@ -28,12 +27,10 @@ class PcmFormat : Format() {
   override fun getContainer(config: RecordConfig): IContainerWriter {
     val path = config.path
     
-    // Hybrid mode: both file and stream
+    // Hybrid mode: file only (PCM streaming is handled directly in RecordThread)
+    // This matches iOS behavior where both file and stream are raw PCM
     if (config.hybridMode && path != null) {
-      val fileContainer = RawContainer(path)
-      val streamContainer = RawContainer(null)
-      
-      return HybridContainer(fileContainer, streamContainer)
+      return RawContainer(path)
     }
     
     // File only or stream only
