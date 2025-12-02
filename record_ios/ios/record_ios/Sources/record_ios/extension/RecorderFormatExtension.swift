@@ -35,7 +35,7 @@ extension AudioRecordingDelegate {
       settings = [
         AVFormatIDKey : kAudioFormatMPEG4AAC,
         AVEncoderBitRateKey: config.bitRate,
-        AVSampleRateKey: config.sampleRate,
+        AVSampleRateKey: Double(config.sampleRate),
         AVNumberOfChannelsKey: config.numChannels,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
       ]
@@ -43,7 +43,7 @@ extension AudioRecordingDelegate {
       settings = [
         AVFormatIDKey : kAudioFormatMPEG4AAC_ELD_V2,
         AVEncoderBitRateKey: config.bitRate,
-        AVSampleRateKey: config.sampleRate,
+        AVSampleRateKey: Double(config.sampleRate),
         AVNumberOfChannelsKey: config.numChannels,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
       ]
@@ -51,7 +51,7 @@ extension AudioRecordingDelegate {
       settings = [
         AVFormatIDKey : kAudioFormatMPEG4AAC_HE_V2,
         AVEncoderBitRateKey: config.bitRate,
-        AVSampleRateKey: config.sampleRate,
+        AVSampleRateKey: Double(config.sampleRate),
         AVNumberOfChannelsKey: config.numChannels,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
       ]
@@ -59,7 +59,7 @@ extension AudioRecordingDelegate {
       settings = [
         AVFormatIDKey : kAudioFormatAMR,
         AVEncoderBitRateKey: config.bitRate,
-        AVSampleRateKey: 8000,
+        AVSampleRateKey: 8000.0,
         AVNumberOfChannelsKey: config.numChannels,
         AVLinearPCMBitDepthKey: 8,
         AVLinearPCMIsFloatKey: false,
@@ -71,7 +71,7 @@ extension AudioRecordingDelegate {
       settings = [
         AVFormatIDKey : kAudioFormatAMR_WB,
         AVEncoderBitRateKey: config.bitRate,
-        AVSampleRateKey: 16000,
+        AVSampleRateKey: 16000.0,
         AVNumberOfChannelsKey: config.numChannels,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
       ]
@@ -79,7 +79,7 @@ extension AudioRecordingDelegate {
       settings = [
         AVFormatIDKey : kAudioFormatOpus,
         AVEncoderBitRateKey: config.bitRate,
-        AVSampleRateKey: config.sampleRate,
+        AVSampleRateKey: Double(config.sampleRate),
         AVNumberOfChannelsKey: config.numChannels,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
       ]
@@ -87,7 +87,7 @@ extension AudioRecordingDelegate {
       settings = [
         AVFormatIDKey : kAudioFormatFLAC,
         AVEncoderBitRateKey: config.bitRate,
-        AVSampleRateKey: config.sampleRate,
+        AVSampleRateKey: Double(config.sampleRate),
         AVNumberOfChannelsKey: config.numChannels,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
       ]
@@ -98,7 +98,7 @@ extension AudioRecordingDelegate {
         AVLinearPCMIsFloatKey: false,
         AVLinearPCMIsBigEndianKey: false,
         AVLinearPCMIsNonInterleaved: false,
-        AVSampleRateKey: config.sampleRate,
+        AVSampleRateKey: Double(config.sampleRate),
         AVNumberOfChannelsKey: config.numChannels,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
       ]
@@ -110,7 +110,7 @@ extension AudioRecordingDelegate {
         AVLinearPCMIsFloatKey: false,
         AVLinearPCMIsBigEndianKey: false,
         AVLinearPCMIsNonInterleaved: false,
-        AVSampleRateKey: config.sampleRate,
+        AVSampleRateKey: Double(config.sampleRate),
         AVNumberOfChannelsKey: config.numChannels,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
       ]
@@ -119,7 +119,7 @@ extension AudioRecordingDelegate {
       settings = [
         AVFormatIDKey : kAudioFormatMPEG4AAC,
         AVEncoderBitRateKey: config.bitRate,
-        AVSampleRateKey: config.sampleRate,
+        AVSampleRateKey: Double(config.sampleRate),
         AVNumberOfChannelsKey: config.numChannels,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
       ]

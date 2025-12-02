@@ -57,8 +57,12 @@ class RecorderHybridDelegate: NSObject, AudioRecordingDelegate, AVAudioRecorderD
     try setVoiceProcessing(echoCancel: config.echoCancel, autoGain: config.autoGain)
     
     // 1️⃣ Setup AVAudioRecorder for file output
+    // Hardcode file sample rate to 44100 for high quality storage
+    // Stream uses config.sampleRate separately
     let url = URL(fileURLWithPath: path)
-    let recorder = try AVAudioRecorder(url: url, settings: getOutputSettings(config: config))
+    var fileSettings = try getOutputSettings(config: config)
+    fileSettings[AVSampleRateKey] = 44100.0  // Override sample rate for file
+    let recorder = try AVAudioRecorder(url: url, settings: fileSettings)
     recorder.delegate = self
     recorder.isMeteringEnabled = true
     recorder.prepareToRecord()

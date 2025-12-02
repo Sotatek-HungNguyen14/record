@@ -68,7 +68,7 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
         // Stream-only mode ONLY supports PCM16bits
         // File and Hybrid modes can use AAC for better quality
         final encoder = _recordingMode == RecordingMode.streamOnly
-            ? AudioEncoder.pcm16bits
+            ? AudioEncoder.aacLc
             : AudioEncoder.aacLc;
 
         if (!await _isEncoderSupported(encoder)) {
@@ -78,7 +78,8 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
         final devs = await _audioRecorder.listInputDevices();
         debugPrint(devs.toString());
 
-        final config = RecordConfig(encoder: encoder, numChannels: 1);
+        final config =
+            RecordConfig(encoder: encoder, sampleRate: 16000, numChannels: 1);
 
         // Reset stream stats
         setState(() {
