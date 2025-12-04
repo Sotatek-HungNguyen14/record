@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 
 import 'platform/audio_recorder_platform.dart';
@@ -64,6 +66,15 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
   Future<void> _start() async {
     try {
       if (await _audioRecorder.hasPermission()) {
+        // Request notification permission for Android 13+ (for foreground service notification)
+        if (!kIsWeb && Platform.isAndroid) {
+          final notificationStatus = await Permission.notification.status;
+          if (!notificationStatus.isGranted) {
+            final result = await Permission.notification.request();
+            debugPrint('📱 Notification permission: $result');
+          }
+        }
+
         // 🎯 Select encoder based on recording mode
         // Stream-only mode ONLY supports PCM16bits
         // File and Hybrid modes can use AAC for better quality
@@ -78,8 +89,24 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
         final devs = await _audioRecorder.listInputDevices();
         debugPrint(devs.toString());
 
-        final config =
-            RecordConfig(encoder: encoder, sampleRate: 16000, numChannels: 1);
+        final config = RecordConfig(
+            encoder: encoder,
+            sampleRate: 16000,
+            numChannels: 1,
+            audioInterruption: AudioInterruptionMode.pauseResume,
+            androidConfig: AndroidRecordConfig(
+              service: AndroidService(
+                title: 'Record Example',
+                content: 'Recording audio',
+              ),
+            ),
+            iosConfig: IosRecordConfig(
+              categoryOptions: [
+                IosAudioCategoryOption.allowBluetooth,
+                IosAudioCategoryOption.allowBluetoothA2DP,
+                IosAudioCategoryOption.mixWithOthers,
+              ],
+            ));
 
         // Reset stream stats
         setState(() {
@@ -150,6 +177,7 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
   Future<void> _resume() => _audioRecorder.resume();
 
   void _updateRecordState(RecordState recordState) {
+    debugPrint('🎤 Record state changed: $recordState');
     setState(() => _recordState = recordState);
 
     switch (recordState) {

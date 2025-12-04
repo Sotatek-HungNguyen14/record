@@ -36,6 +36,7 @@ class Recorder {
     let delegate = RecorderFileDelegate(
       manageAudioSession: manageAudioSession,
       onPause: {() -> () in self.updateState(RecordState.pause)},
+      onResume: {() -> () in self.updateState(RecordState.record)},
       onStop: {() -> () in self.updateState(RecordState.stop)}
     )
     
@@ -59,6 +60,7 @@ class Recorder {
     let delegate = RecorderStreamDelegate(
       manageAudioSession: manageAudioSession,
       onPause: {() -> () in self.updateState(RecordState.pause)},
+      onResume: {() -> () in self.updateState(RecordState.record)},
       onStop: {() -> () in self.updateState(RecordState.stop)}
     )
     
@@ -82,6 +84,7 @@ class Recorder {
     let delegate = RecorderHybridDelegate(
       manageAudioSession: manageAudioSession,
       onPause: {() -> () in self.updateState(RecordState.pause)},
+      onResume: {() -> () in self.updateState(RecordState.record)},
       onStop: {() -> () in self.updateState(RecordState.stop)}
     )
     

@@ -49,48 +49,6 @@ extension AudioRecordingDelegate {
     } catch {
       throw RecorderError.error(message: "Failed to start recording", details: "setInput: \(error.localizedDescription)")
     }
-    
-    NotificationCenter.default.addObserver(
-      forName: AVAudioSession.interruptionNotification,
-      object: nil,
-      queue: nil,
-      using: onAudioSessionInterruption)
-  }
-
-  private func onAudioSessionInterruption(notification: Notification) -> Void {
-    guard let userInfo = notification.userInfo,
-          let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
-          let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
-      return
-    }
-    
-    guard let config = self.config else {
-      return
-    }
-  
-    if type == AVAudioSession.InterruptionType.began {
-      if config.audioInterruption != AudioInterruptionMode.none {
-        pause()
-      }
-    } else if type == AVAudioSession.InterruptionType.ended {
-      if config.audioInterruption == AudioInterruptionMode.pauseResume {
-        guard let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt else {
-          return
-        }
-        let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
-
-        if options.contains(.shouldResume) {
-          do {
-            try AVAudioSession.sharedInstance().setActive(true)
-            try resume()
-          } catch {
-            stop { path in }
-          }
-        } else {
-          stop { path in }
-        }
-      }
-    }
   }
 
   private func setInput(_ config: RecordConfig) throws {

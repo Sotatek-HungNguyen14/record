@@ -233,20 +233,41 @@ class AudioRecorder(
 
   @Suppress("DEPRECATION")
   private fun requestAudioFocus(audioManager: AudioManager) {
+    // Skip audio focus entirely for NONE mode (true background recording)
+    if (config?.audioInterruption == AudioInterruption.NONE) {
+      Log.d(TAG, "Skipping audio focus request (audioInterruption: NONE)")
+      return
+    }
+
     afChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
-      if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-        if (config!!.audioInterruption != AudioInterruption.NONE) {
+      when (focusChange) {
+        // Permanent loss - another app took audio focus
+        AudioManager.AUDIOFOCUS_LOSS -> {
+          Log.d(TAG, "Audio focus lost permanently, pausing recording")
           recorderThread?.pauseRecording()
         }
-      } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-        if (config!!.audioInterruption == AudioInterruption.PAUSE_RESUME) {
-          recorderThread?.resumeRecording()
+        // Transient loss - phone call, alarm, etc.
+        AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+          Log.d(TAG, "Audio focus lost transiently, pausing recording")
+          recorderThread?.pauseRecording()
+        }
+        // Transient loss but can duck (lower volume) - continue recording
+        AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+          Log.d(TAG, "Audio focus lost (can duck), continuing recording")
+          // Don't pause - recording can continue with lower priority
+        }
+        // Audio focus regained
+        AudioManager.AUDIOFOCUS_GAIN -> {
+          if (config?.audioInterruption == AudioInterruption.PAUSE_RESUME) {
+            Log.d(TAG, "Audio focus gained, resuming recording")
+            recorderThread?.resumeRecording()
+          }
         }
       }
     }
 
     if (Build.VERSION.SDK_INT >= 26) {
-      afRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
+      afRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT).run {
         setAudioAttributes(AudioAttributes.Builder().run {
           setUsage(AudioAttributes.USAGE_MEDIA)
           setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
@@ -259,7 +280,9 @@ class AudioRecorder(
       audioManager.requestAudioFocus(afRequest!!)
     } else {
       audioManager.requestAudioFocus(
-        afChangeListener, AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN
+        afChangeListener,
+        AudioManager.STREAM_MUSIC,
+        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
       )
     }
   }

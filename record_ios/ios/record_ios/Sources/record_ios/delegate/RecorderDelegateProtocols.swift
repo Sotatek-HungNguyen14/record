@@ -13,6 +13,7 @@ public enum RecordState: Int {
 
 public protocol AudioRecordingDelegate {
   var config: RecordConfig? { get }
+  var onResume: (() -> ())? { get }
   
   func stop(completionHandler: @escaping (String?) -> ())
   func cancel() throws
