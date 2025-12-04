@@ -39,6 +39,8 @@ class RecorderWrapper(
   private var recorder: IRecorder? = null
   private var bluetoothReceiver: BluetoothReceiver? = null
   private var isRegistered = false
+  @Volatile
+  private var isStopping = false  // Prevents race condition during stop
 
   init {
     eventChannel = EventChannel(messenger, EVENTS_STATE_CHANNEL + recorderId)
@@ -70,14 +72,16 @@ class RecorderWrapper(
   }
 
   fun dispose() {
+    isStopping = true
     try {
       recorder?.dispose()
     } catch (_: Exception) {
     } finally {
       maybeStopBluetooth()
+      unregisterFromService()  // Unregister BEFORE stopping service
       stopService()
-      unregisterFromService()
       recorder = null
+      isStopping = false
     }
 
     eventChannel?.setStreamHandler(null)
@@ -126,20 +130,26 @@ class RecorderWrapper(
   }
 
   fun stop(result: MethodChannel.Result) {
+    isStopping = true
     try {
       if (recorder == null) {
         result.success(null)
+        unregisterFromService()
+        stopService()
+        isStopping = false
       } else {
         recorder?.stop(fun(path) {
           result.success(path)
           unregisterFromService()
+          stopService()  // Stop service AFTER unregistering to avoid race condition
+          isStopping = false
         })
       }
     } catch (e: Exception) {
       result.error("record", e.message, e.cause)
       unregisterFromService()
-    } finally {
       stopService()
+      isStopping = false
     }
   }
   
@@ -149,15 +159,26 @@ class RecorderWrapper(
    */
   fun stopOnTaskRemoved(onSuccess: () -> Unit, onError: (String) -> Unit) {
     Log.d(TAG, "stopOnTaskRemoved called")
+    
+    // Skip if already stopping to prevent double-stop
+    if (isStopping) {
+      Log.d(TAG, "stopOnTaskRemoved skipped - already stopping")
+      onSuccess()
+      return
+    }
+    
+    isStopping = true
     try {
       if (recorder == null) {
         Log.d(TAG, "No active recorder")
+        isStopping = false
         onSuccess()
         return
       }
       
       if (!recorder!!.isRecording) {
         Log.d(TAG, "Recorder not recording")
+        isStopping = false
         onSuccess()
         return
       }
@@ -167,11 +188,13 @@ class RecorderWrapper(
         Log.d(TAG, "Recording stopped successfully, file saved: $path")
         unregisterFromService()
         stopService()
+        isStopping = false
         onSuccess()
       }
     } catch (e: Exception) {
       Log.e(TAG, "Error in stopOnTaskRemoved: ${e.message}", e)
       unregisterFromService()
+      isStopping = false
       onError(e.message ?: "Unknown error")
     }
   }
@@ -180,7 +203,15 @@ class RecorderWrapper(
    * Force stop without callback - used as last resort in Service.onDestroy()
    */
   fun forceStop() {
+    // Skip if already stopping to prevent double-stop race condition
+    if (isStopping) {
+      Log.d(TAG, "forceStop skipped - already stopping")
+      unregisterFromService()  // Just unregister to clean up service tracking
+      return
+    }
+    
     Log.w(TAG, "forceStop called - forcing immediate cleanup")
+    isStopping = true
     try {
       recorder?.dispose()
       unregisterFromService()
@@ -189,6 +220,7 @@ class RecorderWrapper(
       Log.e(TAG, "Error in forceStop: ${e.message}", e)
     } finally {
       recorder = null
+      isStopping = false
     }
   }
 
